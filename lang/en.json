@@ -9,6 +9,20 @@
         "Name": "DM Seat ID",
         "Hint": "On which seat is the dungeon master?"
       },
+      "seat-config": {
+        "Name": "Seat configuration",
+        "Hint": "Assign how many LEDs each seat occupies on the strip, and pick the colors used to highlight the current and on-deck combatants.",
+        "Label": "Configure seats",
+        "Title": "DigiTable - Seat configuration",
+        "SeatHeader": "Seat",
+        "LedCount": "LED count",
+        "ColorCurrent": "Current turn color",
+        "ColorNext": "Next turn color",
+        "AddSeat": "Add seat",
+        "RemoveSeat": "Remove seat",
+        "TotalLeds": "Total LEDs",
+        "Reset": "Reset to defaults"
+      },
       "Actor": {
         "Title": "Character settings",
         "Seat": {
@@ -18,7 +32,7 @@
     },
     "Button": {
       "Save": "Save",
-      "Chancel": "Chancel"
+      "Chancel": "Cancel"
     }
   }
 }

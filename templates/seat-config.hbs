@@ -1,0 +1,54 @@
+<section class="digitable-seat-config-body">
+  <p class="notes">{{localize i18n.title}}</p>
+
+  <div class="digitable-seat-list">
+    {{#each seats}}
+      <div class="digitable-seat-row" data-seat-index="{{this.index}}">
+        <label class="digitable-seat-label">{{localize ../i18n.seatHeader}} {{this.index}}</label>
+        <input type="number"
+               name="seats.{{this.index}}.ledCount"
+               value="{{this.ledCount}}"
+               min="0"
+               step="1"
+               class="digitable-seat-count" />
+        <button type="button"
+                class="digitable-seat-remove"
+                data-action="removeSeat"
+                data-seat-index="{{this.index}}"
+                data-tooltip="{{localize ../i18n.removeSeat}}">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    {{/each}}
+  </div>
+
+  <div class="digitable-seat-actions">
+    <button type="button" data-action="addSeat">
+      <i class="fa-solid fa-plus"></i> {{localize i18n.addSeat}}
+    </button>
+    <span class="digitable-seat-total">
+      {{localize i18n.total}}: <strong data-total-leds>{{total}}</strong>
+    </span>
+  </div>
+
+  <hr />
+
+  <div class="form-group">
+    <label>{{localize i18n.colorCurrent}}</label>
+    <input type="color" name="colorCurrent" value="{{colorCurrent}}" />
+  </div>
+
+  <div class="form-group">
+    <label>{{localize i18n.colorNext}}</label>
+    <input type="color" name="colorNext" value="{{colorNext}}" />
+  </div>
+</section>
+
+<footer class="form-footer digitable-seat-footer">
+  <button type="button" data-action="reset">
+    <i class="fa-solid fa-rotate-left"></i> {{localize i18n.reset}}
+  </button>
+  <button type="submit">
+    <i class="fa-solid fa-check"></i> {{localize i18n.save}}
+  </button>
+</footer>

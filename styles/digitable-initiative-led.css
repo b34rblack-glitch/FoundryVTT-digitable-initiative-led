@@ -30,3 +30,63 @@
     box-shadow: none;
     text-shadow: 0 0 5px red;
 }
+
+.digitable-seat-config .digitable-seat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+    margin: 0.5em 0;
+}
+
+.digitable-seat-config .digitable-seat-row {
+    display: grid;
+    grid-template-columns: 6em 1fr auto;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.digitable-seat-config .digitable-seat-label {
+    font-weight: bold;
+}
+
+.digitable-seat-config .digitable-seat-count {
+    width: 100%;
+}
+
+.digitable-seat-config .digitable-seat-remove {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    padding: 0.25em 0.5em;
+}
+
+.digitable-seat-config .digitable-seat-remove:hover {
+    color: var(--color-warm-2, #b00);
+}
+
+.digitable-seat-config .digitable-seat-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.5em 0;
+}
+
+.digitable-seat-config .digitable-seat-total strong {
+    font-variant-numeric: tabular-nums;
+}
+
+.digitable-seat-config .form-group input[type="color"] {
+    width: 4em;
+    height: 2em;
+    padding: 0;
+    border: 1px solid var(--color-border-light-tertiary, #999);
+    background: transparent;
+}
+
+.digitable-seat-config .digitable-seat-footer {
+    display: flex;
+    gap: 0.5em;
+    justify-content: flex-end;
+    margin-top: 0.5em;
+}
