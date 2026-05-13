@@ -336,27 +336,36 @@ class SeatConfigApp extends (_AppV2 && _HbsMixin ? _HbsMixin(_AppV2) : FormAppli
   }
 
   // ---- ApplicationV2 surface -------------------------------------------
+  // NOTE: DEFAULT_OPTIONS must be a static *getter*, not a static field.
+  // ApplicationV2 inspects `form.handler` and `actions.*` during construction
+  // and rejects anything that isn't a function. If we used a static field
+  // here, the references to `_onSubmit` / `_onAddSeat` / etc. would resolve
+  // to `undefined` because static method declarations later in the class body
+  // haven't been attached to the class yet at field-initialization time. The
+  // getter form defers lookup until the property is actually accessed.
 
-  static DEFAULT_OPTIONS = {
-    id: 'digitable-seat-config',
-    tag: 'form',
-    window: {
-      title: 'FoundryVTT-digitable-initiative-led.settings.seat-config.Title',
-      icon: 'fa-solid fa-sliders',
-      contentClasses: ['standard-form', 'digitable-seat-config']
-    },
-    position: { width: 480, height: 'auto' },
-    form: {
-      handler: SeatConfigApp._onSubmit,
-      closeOnSubmit: true,
-      submitOnChange: false
-    },
-    actions: {
-      addSeat: SeatConfigApp._onAddSeat,
-      removeSeat: SeatConfigApp._onRemoveSeat,
-      reset: SeatConfigApp._onReset
-    }
-  };
+  static get DEFAULT_OPTIONS() {
+    return {
+      id: 'digitable-seat-config',
+      tag: 'form',
+      window: {
+        title: 'FoundryVTT-digitable-initiative-led.settings.seat-config.Title',
+        icon: 'fa-solid fa-sliders',
+        contentClasses: ['standard-form', 'digitable-seat-config']
+      },
+      position: { width: 480, height: 'auto' },
+      form: {
+        handler: this._onSubmit,
+        closeOnSubmit: true,
+        submitOnChange: false
+      },
+      actions: {
+        addSeat: this._onAddSeat,
+        removeSeat: this._onRemoveSeat,
+        reset: this._onReset
+      }
+    };
+  }
 
   static PARTS = {
     body: { template: 'modules/foundryvtt-digitable-initiative-led/templates/seat-config.hbs' }

@@ -13,9 +13,6 @@
   "styles": [
     "styles/digitable-initiative-led.css"
   ],
-  "templates": [
-    "templates/seat-config.hbs"
-  ],
   "languages": [
     {
       "lang": "en",
