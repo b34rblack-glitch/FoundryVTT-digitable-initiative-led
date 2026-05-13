@@ -33,7 +33,7 @@
     "verified": "14"
   },
   "url": "https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led",
-  "manifest": "https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led/raw/claude/foundry-vtt-v14-update-HsRfq/module.json",
+  "manifest": "https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led/raw/main/module.json",
   "version": "1.2.0",
-  "download": "https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led/archive/refs/heads/claude/foundry-vtt-v14-update-HsRfq.zip"
+  "download": "https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led/archive/refs/heads/main.zip"
 }

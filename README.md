@@ -17,7 +17,7 @@ Once you have the hardware ready, all you need is the IP address of the WLED con
 1. In Foundry's setup screen open **Add-on Modules → Install Module**.
 2. Paste this manifest URL into the **Manifest URL** field at the bottom and click **Install**:
    ```
-   https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led/raw/claude/foundry-vtt-v14-update-HsRfq/module.json
+   https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led/raw/main/module.json
    ```
 3. Enable the module inside your world from **Game Settings → Manage Modules**.
 
