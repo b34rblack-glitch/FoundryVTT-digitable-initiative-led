@@ -1,21 +1,25 @@
 /**
  * Digital Table - Initiative LED
  * Controls a WLED-driven LED strip from Foundry combat events.
- * Each "seat" owns a contiguous range of LEDs. During combat, the
- * active combatant's seat is lit with the "current" color and the
- * next combatant's seat is lit with the "next" color.
+ * Each "seat" owns an explicit, inclusive `[start, end]` range of LED
+ * indices on the strip. During combat, the active combatant's seat is
+ * lit with the "current" color and the next combatant's seat with the
+ * "next" color; every other LED is dark.
  */
 class DigiTableInitiativeLED {
   static ID = 'foundryvtt-digitable-initiative-led';
   static I18N = 'FoundryVTT-digitable-initiative-led';
 
+  // Default layout: six seats, one LED each, packed at the start of the
+  // strip. Matches the original module's 6-LED behavior so existing
+  // hardware setups still light up sensibly on first install.
   static DEFAULT_SEATS = [
-    { ledCount: 1 },
-    { ledCount: 1 },
-    { ledCount: 1 },
-    { ledCount: 1 },
-    { ledCount: 1 },
-    { ledCount: 1 }
+    { name: '', start: 0, end: 0 },
+    { name: '', start: 1, end: 1 },
+    { name: '', start: 2, end: 2 },
+    { name: '', start: 3, end: 3 },
+    { name: '', start: 4, end: 4 },
+    { name: '', start: 5, end: 5 }
   ];
 
   static DEFAULT_COLOR_CURRENT = '#ff0000';
@@ -125,20 +129,65 @@ class DigiTableInitiativeLED {
   }
 
   /**
-   * Build prefix-sum ranges for every seat. Returns
-   * `{ total, ranges: [{start, end}, ...] }` where `end` is exclusive.
+   * Normalize a single seat record from settings into
+   * `{ name, start, end }`. `end` is inclusive. Supports the legacy
+   * `{ ledCount }` shape by mapping it to an empty range (the migration
+   * runs at `ready`; this is just defensive).
+   */
+  static normalizeSeat(raw, fallbackIndex = 0) {
+    const name = typeof raw?.name === 'string' ? raw.name : '';
+    if (raw?.start !== undefined || raw?.end !== undefined) {
+      const start = Math.max(0, Number(raw?.start ?? 0) | 0);
+      const end = Math.max(-1, Number(raw?.end ?? start - 1) | 0);
+      return { name, start, end };
+    }
+    // Legacy ledCount fallback: treat as one slot at fallbackIndex.
+    return { name, start: fallbackIndex, end: fallbackIndex };
+  }
+
+  /**
+   * Return `{ total, ranges }` where `ranges[i]` is the inclusive
+   * `{ start, end }` range owned by seat `i`, and `total` is the
+   * minimum strip length required to address every LED any seat claims
+   * (i.e. `max(end) + 1`).
    */
   static buildSeatRanges() {
     const cfg = game.settings.get(this.ID, 'seat-config') ?? {};
     const seats = Array.isArray(cfg.seats) ? cfg.seats : [];
     const ranges = [];
+    let total = 0;
+    seats.forEach((seat, i) => {
+      const { start, end } = this.normalizeSeat(seat, i);
+      ranges.push({ start, end });
+      if (end >= start) total = Math.max(total, end + 1);
+    });
+    return { total, ranges };
+  }
+
+  /**
+   * One-shot migration from the prior `{ledCount}` shape to explicit
+   * `{name, start, end}` ranges, computed via the old prefix-sum rule
+   * so the visual layout stays identical until the GM edits it. Idempotent.
+   */
+  static migrateSeatConfig() {
+    const cfg = game.settings.get(this.ID, 'seat-config');
+    if (!cfg || !Array.isArray(cfg.seats) || !cfg.seats.length) return false;
+    const first = cfg.seats[0];
+    if (first && (first.start !== undefined || first.end !== undefined)) return false;
+
     let cursor = 0;
-    for (const seat of seats) {
-      const count = Math.max(0, Number(seat?.ledCount ?? 0) | 0);
-      ranges.push({ start: cursor, end: cursor + count });
+    const migrated = cfg.seats.map((s) => {
+      const count = Math.max(0, Number(s?.ledCount ?? 0) | 0);
+      const seat = {
+        name: typeof s?.name === 'string' ? s.name : '',
+        start: cursor,
+        end: cursor + count - 1 // inclusive; count=0 yields end < start (empty)
+      };
       cursor += count;
-    }
-    return { total: cursor, ranges };
+      return seat;
+    });
+
+    return game.settings.set(this.ID, 'seat-config', { seats: migrated });
   }
 
   /**
@@ -194,7 +243,8 @@ class DigiTableInitiativeLED {
     const paint = (seatIdx, color) => {
       if (seatIdx === null || seatIdx < 0 || seatIdx >= ranges.length) return;
       const { start, end } = ranges[seatIdx];
-      for (let i = start; i < end; i += 1) ledArray[i] = color;
+      // Inclusive on both ends; loop is a no-op when end < start (empty seat).
+      for (let i = start; i <= end && i < total; i += 1) ledArray[i] = color;
     };
 
     // Paint "next" first so that if a single seat is both, "current" wins.
@@ -390,9 +440,27 @@ class SeatConfigApp extends (_AppV2 && _HbsMixin ? _HbsMixin(_AppV2) : FormAppli
 
   _loadFromSettings() {
     const cfg = game.settings.get(DigiTableInitiativeLED.ID, 'seat-config') ?? {};
-    const seats = Array.isArray(cfg.seats) && cfg.seats.length
-      ? cfg.seats.map((s) => ({ ledCount: Math.max(0, Number(s?.ledCount ?? 0) | 0) }))
-      : DigiTableInitiativeLED.DEFAULT_SEATS.map((s) => ({ ...s }));
+    const rawSeats = Array.isArray(cfg.seats) ? cfg.seats : [];
+    let seats;
+    if (!rawSeats.length) {
+      seats = DigiTableInitiativeLED.DEFAULT_SEATS.map((s) => ({ ...s }));
+    } else if (rawSeats[0]?.start !== undefined || rawSeats[0]?.end !== undefined) {
+      // Current shape
+      seats = rawSeats.map((s) => DigiTableInitiativeLED.normalizeSeat(s));
+    } else {
+      // Legacy ledCount shape (migration didn't run yet) - convert via prefix sum
+      let cursor = 0;
+      seats = rawSeats.map((s) => {
+        const count = Math.max(0, Number(s?.ledCount ?? 0) | 0);
+        const seat = {
+          name: typeof s?.name === 'string' ? s.name : '',
+          start: cursor,
+          end: cursor + count - 1
+        };
+        cursor += count;
+        return seat;
+      });
+    }
     return {
       seats,
       colorCurrent: game.settings.get(DigiTableInitiativeLED.ID, 'color-current') || DigiTableInitiativeLED.DEFAULT_COLOR_CURRENT,
@@ -402,13 +470,16 @@ class SeatConfigApp extends (_AppV2 && _HbsMixin ? _HbsMixin(_AppV2) : FormAppli
 
   _captureFormState(form) {
     if (!form) return;
-    const counts = form.querySelectorAll('input[name^="seats."]');
     const seats = [];
-    counts.forEach((input) => {
-      const m = /^seats\.(\d+)\.ledCount$/.exec(input.name);
+    const ensure = (i) => { seats[i] ??= { name: '', start: 0, end: -1 }; return seats[i]; };
+    form.querySelectorAll('input[name^="seats."]').forEach((input) => {
+      const m = /^seats\.(\d+)\.(name|start|end)$/.exec(input.name);
       if (!m) return;
       const idx = Number(m[1]);
-      seats[idx] = { ledCount: Math.max(0, Number(input.value) | 0) };
+      const field = m[2];
+      const seat = ensure(idx);
+      if (field === 'name') seat.name = input.value;
+      else seat[field] = Math.max(field === 'end' ? -1 : 0, Number(input.value) | 0);
     });
     this._working.seats = seats.filter((s) => s);
     const cc = form.querySelector('input[name="colorCurrent"]');
@@ -428,21 +499,36 @@ class SeatConfigApp extends (_AppV2 && _HbsMixin ? _HbsMixin(_AppV2) : FormAppli
   }
 
   _buildContext() {
-    const total = this._working.seats.reduce((a, s) => a + Math.max(0, Number(s.ledCount) | 0), 0);
+    let total = 0;
+    for (const s of this._working.seats) {
+      const end = Number(s.end);
+      const start = Number(s.start);
+      if (Number.isFinite(end) && Number.isFinite(start) && end >= start) {
+        total = Math.max(total, end + 1);
+      }
+    }
     return {
-      seats: this._working.seats.map((s, i) => ({ index: i, ledCount: s.ledCount })),
+      seats: this._working.seats.map((s, i) => ({
+        index: i,
+        name: s.name ?? '',
+        start: s.start ?? 0,
+        end: s.end ?? 0
+      })),
       colorCurrent: this._working.colorCurrent,
       colorNext: this._working.colorNext,
       total,
       i18n: {
         title: `${DigiTableInitiativeLED.I18N}.settings.seat-config.Title`,
         seatHeader: `${DigiTableInitiativeLED.I18N}.settings.seat-config.SeatHeader`,
-        ledCount: `${DigiTableInitiativeLED.I18N}.settings.seat-config.LedCount`,
+        nameLabel: `${DigiTableInitiativeLED.I18N}.settings.seat-config.NameLabel`,
+        namePlaceholder: `${DigiTableInitiativeLED.I18N}.settings.seat-config.NamePlaceholder`,
+        startLabel: `${DigiTableInitiativeLED.I18N}.settings.seat-config.StartLabel`,
+        endLabel: `${DigiTableInitiativeLED.I18N}.settings.seat-config.EndLabel`,
         colorCurrent: `${DigiTableInitiativeLED.I18N}.settings.seat-config.ColorCurrent`,
         colorNext: `${DigiTableInitiativeLED.I18N}.settings.seat-config.ColorNext`,
         addSeat: `${DigiTableInitiativeLED.I18N}.settings.seat-config.AddSeat`,
         removeSeat: `${DigiTableInitiativeLED.I18N}.settings.seat-config.RemoveSeat`,
-        total: `${DigiTableInitiativeLED.I18N}.settings.seat-config.TotalLeds`,
+        total: `${DigiTableInitiativeLED.I18N}.settings.seat-config.StripLength`,
         save: `${DigiTableInitiativeLED.I18N}.Button.Save`,
         cancel: `${DigiTableInitiativeLED.I18N}.Button.Chancel`,
         reset: `${DigiTableInitiativeLED.I18N}.settings.seat-config.Reset`
@@ -455,7 +541,14 @@ class SeatConfigApp extends (_AppV2 && _HbsMixin ? _HbsMixin(_AppV2) : FormAppli
   static _onAddSeat(event) {
     event?.preventDefault?.();
     this._captureFormState(this.element);
-    this._working.seats.push({ ledCount: 1 });
+    // Suggest a non-overlapping starting LED: one past the highest end
+    // of any existing seat (or 0 when there are none).
+    let nextStart = 0;
+    for (const s of this._working.seats) {
+      const end = Number(s.end);
+      if (Number.isFinite(end)) nextStart = Math.max(nextStart, end + 1);
+    }
+    this._working.seats.push({ name: '', start: nextStart, end: nextStart });
     this.render();
   }
 
@@ -491,26 +584,33 @@ class SeatConfigApp extends (_AppV2 && _HbsMixin ? _HbsMixin(_AppV2) : FormAppli
 
   async _persist(formData) {
     const seats = [];
+    const ensure = (i) => { seats[i] ??= { name: '', start: 0, end: -1 }; return seats[i]; };
     for (const [key, value] of Object.entries(formData ?? {})) {
-      const m = /^seats\.(\d+)\.ledCount$/.exec(key);
+      const m = /^seats\.(\d+)\.(name|start|end)$/.exec(key);
       if (!m) continue;
-      seats[Number(m[1])] = { ledCount: Math.max(0, Number(value) | 0) };
+      const idx = Number(m[1]);
+      const field = m[2];
+      const seat = ensure(idx);
+      if (field === 'name') seat.name = typeof value === 'string' ? value : '';
+      else seat[field] = Math.max(field === 'end' ? -1 : 0, Number(value) | 0);
     }
     const cleaned = seats.filter((s) => s);
 
-    await game.settings.set(DigiTableInitiativeLED.ID, 'seat-config', {
-      seats: cleaned.length ? cleaned : DigiTableInitiativeLED.DEFAULT_SEATS.map((s) => ({ ...s }))
-    });
-    await game.settings.set(
-      DigiTableInitiativeLED.ID,
-      'color-current',
-      formData?.colorCurrent || DigiTableInitiativeLED.DEFAULT_COLOR_CURRENT
-    );
-    await game.settings.set(
-      DigiTableInitiativeLED.ID,
-      'color-next',
-      formData?.colorNext || DigiTableInitiativeLED.DEFAULT_COLOR_NEXT
-    );
+    await Promise.all([
+      game.settings.set(DigiTableInitiativeLED.ID, 'seat-config', {
+        seats: cleaned.length ? cleaned : DigiTableInitiativeLED.DEFAULT_SEATS.map((s) => ({ ...s }))
+      }),
+      game.settings.set(
+        DigiTableInitiativeLED.ID,
+        'color-current',
+        formData?.colorCurrent || DigiTableInitiativeLED.DEFAULT_COLOR_CURRENT
+      ),
+      game.settings.set(
+        DigiTableInitiativeLED.ID,
+        'color-next',
+        formData?.colorNext || DigiTableInitiativeLED.DEFAULT_COLOR_NEXT
+      )
+    ]);
   }
 
   // Re-bind on each ApplicationV2 render so live totals reflect input.
@@ -532,10 +632,20 @@ class SeatConfigApp extends (_AppV2 && _HbsMixin ? _HbsMixin(_AppV2) : FormAppli
     const totalEl = root.querySelector('[data-total-leds]');
     if (!totalEl) return;
     const recompute = () => {
-      let total = 0;
-      root.querySelectorAll('input[name^="seats."]').forEach((i) => {
-        total += Math.max(0, Number(i.value) | 0);
+      // Strip length = max(end) + 1 across all rows where end >= start.
+      const byIndex = new Map();
+      root.querySelectorAll('input[name^="seats."]').forEach((input) => {
+        const m = /^seats\.(\d+)\.(start|end)$/.exec(input.name);
+        if (!m) return;
+        const idx = Number(m[1]);
+        const entry = byIndex.get(idx) ?? { start: 0, end: -1 };
+        entry[m[2]] = Math.max(m[2] === 'end' ? -1 : 0, Number(input.value) | 0);
+        byIndex.set(idx, entry);
       });
+      let total = 0;
+      for (const { start, end } of byIndex.values()) {
+        if (end >= start) total = Math.max(total, end + 1);
+      }
       totalEl.textContent = String(total);
     };
     root.querySelectorAll('input[name^="seats."]').forEach((i) => {
@@ -548,6 +658,14 @@ class SeatConfigApp extends (_AppV2 && _HbsMixin ? _HbsMixin(_AppV2) : FormAppli
 
 Hooks.once('init', () => {
   DigiTableInitiativeLED.initialize();
+});
+
+Hooks.once('ready', async () => {
+  // Run the seat-config migration once, from the canonical GM client.
+  if (game.user === game.users?.activeGM) {
+    try { await DigiTableInitiativeLED.migrateSeatConfig(); }
+    catch (err) { console.error(`${DigiTableInitiativeLED.ID} | migration failed`, err); }
+  }
 });
 
 Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {

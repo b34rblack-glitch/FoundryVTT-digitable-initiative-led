@@ -11,16 +11,19 @@
       },
       "seat-config": {
         "Name": "Seat configuration",
-        "Hint": "Assign how many LEDs each seat occupies on the strip, and pick the colors used to highlight the current and on-deck combatants.",
+        "Hint": "Assign each seat an explicit, inclusive range of LED indices on the strip (e.g. 0–15) and pick the colors used to highlight the current and on-deck combatants.",
         "Label": "Configure seats",
         "Title": "DigiTable - Seat configuration",
         "SeatHeader": "Seat",
-        "LedCount": "LED count",
+        "NameLabel": "Seat name",
+        "NamePlaceholder": "Name (optional)",
+        "StartLabel": "First LED index",
+        "EndLabel": "Last LED index",
         "ColorCurrent": "Current turn color",
         "ColorNext": "Next turn color",
         "AddSeat": "Add seat",
         "RemoveSeat": "Remove seat",
-        "TotalLeds": "Total LEDs",
+        "StripLength": "Strip length",
         "Reset": "Reset to defaults"
       },
       "Actor": {

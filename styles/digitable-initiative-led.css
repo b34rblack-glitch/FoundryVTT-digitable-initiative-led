@@ -40,17 +40,28 @@
 
 .digitable-seat-config .digitable-seat-row {
     display: grid;
-    grid-template-columns: 6em 1fr auto;
+    grid-template-columns: 4.5em minmax(0, 1fr) 4.5em auto 4.5em auto;
     align-items: center;
-    gap: 0.5em;
+    gap: 0.4em;
 }
 
 .digitable-seat-config .digitable-seat-label {
     font-weight: bold;
 }
 
-.digitable-seat-config .digitable-seat-count {
+.digitable-seat-config .digitable-seat-name {
     width: 100%;
+}
+
+.digitable-seat-config .digitable-seat-num {
+    width: 100%;
+    text-align: right;
+}
+
+.digitable-seat-config .digitable-seat-dash {
+    text-align: center;
+    opacity: 0.7;
+    user-select: none;
 }
 
 .digitable-seat-config .digitable-seat-remove {

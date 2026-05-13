@@ -4,7 +4,12 @@
   "description": "This module controls the inititive LEDs on our digital table",
   "authors": [
     {
-      "name": "McUles"
+      "name": "McUles",
+      "url": "https://github.com/mcules"
+    },
+    {
+      "name": "b34rblack-glitch (fork maintainer)",
+      "url": "https://github.com/b34rblack-glitch"
     }
   ],
   "scripts": [
@@ -31,6 +36,6 @@
   },
   "url": "https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led",
   "manifest": "https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led/raw/main/module.json",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "download": "https://github.com/b34rblack-glitch/FoundryVTT-digitable-initiative-led/archive/refs/heads/main.zip"
 }

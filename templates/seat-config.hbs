@@ -1,17 +1,30 @@
 <div class="digitable-seat-config-root">
   <section class="digitable-seat-config-body">
-    <p class="notes">{{localize i18n.title}}</p>
-
     <div class="digitable-seat-list">
       {{#each seats}}
         <div class="digitable-seat-row" data-seat-index="{{this.index}}">
           <label class="digitable-seat-label">{{localize ../i18n.seatHeader}} {{this.index}}</label>
+          <input type="text"
+                 name="seats.{{this.index}}.name"
+                 value="{{this.name}}"
+                 placeholder="{{localize ../i18n.namePlaceholder}}"
+                 class="digitable-seat-name"
+                 aria-label="{{localize ../i18n.nameLabel}}" />
           <input type="number"
-                 name="seats.{{this.index}}.ledCount"
-                 value="{{this.ledCount}}"
+                 name="seats.{{this.index}}.start"
+                 value="{{this.start}}"
                  min="0"
                  step="1"
-                 class="digitable-seat-count" />
+                 class="digitable-seat-num"
+                 aria-label="{{localize ../i18n.startLabel}}" />
+          <span class="digitable-seat-dash">&ndash;</span>
+          <input type="number"
+                 name="seats.{{this.index}}.end"
+                 value="{{this.end}}"
+                 min="0"
+                 step="1"
+                 class="digitable-seat-num"
+                 aria-label="{{localize ../i18n.endLabel}}" />
           <button type="button"
                   class="digitable-seat-remove"
                   data-action="removeSeat"
