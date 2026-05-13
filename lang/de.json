@@ -11,16 +11,19 @@
       },
       "seat-config": {
         "Name": "Platz-Konfiguration",
-        "Hint": "Lege fest, wie viele LEDs jedem Platz auf dem Streifen zugewiesen sind, und wähle die Farben für den aktuellen und den nächsten Kämpfer.",
+        "Hint": "Weise jedem Platz einen expliziten LED-Bereich (inklusiv, z. B. 0–15) auf dem Streifen zu und wähle die Farben für den aktuellen und den nächsten Kämpfer.",
         "Label": "Plätze konfigurieren",
         "Title": "DigiTable - Platz-Konfiguration",
         "SeatHeader": "Platz",
-        "LedCount": "LED-Anzahl",
+        "NameLabel": "Platzname",
+        "NamePlaceholder": "Name (optional)",
+        "StartLabel": "Erste LED",
+        "EndLabel": "Letzte LED",
         "ColorCurrent": "Farbe für aktuellen Zug",
         "ColorNext": "Farbe für nächsten Zug",
         "AddSeat": "Platz hinzufügen",
         "RemoveSeat": "Platz entfernen",
-        "TotalLeds": "LEDs gesamt",
+        "StripLength": "Streifenlänge",
         "Reset": "Zurücksetzen"
       },
       "Actor": {
