@@ -4,11 +4,14 @@
   "description": "This module controls the inititive LEDs on our digital table",
   "authors": [
     {
-    "name": "McUles"
+      "name": "McUles"
     }
-    ],
+  ],
   "scripts": [
     "scripts/digitable-initiative-led.js"
+  ],
+  "styles": [
+    "styles/digitable-initiative-led.css"
   ],
   "languages": [
     {
@@ -23,10 +26,11 @@
     }
   ],
   "compatibility": {
-    "verified": "11"
+    "minimum": "12",
+    "verified": "14"
   },
   "url": "https://github.com/mcules/FoundryVTT-digitable-initiative-led",
   "manifest": "https://github.com/mcules/FoundryVTT-digitable-initiative-led/raw/main/module.json",
-  "version": "1.0.3",
-  "download": "https://github.com/mcules/FoundryVTT-digitable-initiative-led/archive/refs/tags/v1.0.3.zip"
+  "version": "1.1.0",
+  "download": "https://github.com/mcules/FoundryVTT-digitable-initiative-led/archive/refs/tags/v1.1.0.zip"
 }
