@@ -1,103 +1,199 @@
+/* ===========================================================================
+ * File: styles/digitable-initiative-led.css
+ * ---------------------------------------------------------------------------
+ * Stylesheet for the "DigiTable - Initiative LED" Foundry VTT module.
+ *
+ * Contents:
+ *   1. `.digitable` and `.digitable > li`
+ *      Generic list styling used by inline form rows in the module's
+ *      settings widgets.
+ *
+ *   2. `.digitable-initiative-led-button`
+ *      The small fist-icon button injected into each Actor Directory
+ *      entry that opens the per-actor seat-assignment dialog. Styled
+ *      to blend into Foundry's directory-list rows rather than look
+ *      like a chunky form button.
+ *
+ *   3. `.digitable-seat-config .*`
+ *      Layout for the SeatConfigApp form: the seat list grid, the
+ *      add/remove controls, the live "Strip length" indicator, color
+ *      pickers, and the footer save/cancel/reset buttons.
+ *
+ * Loaded by Foundry via the `styles` array in module.json.
+ * =========================================================================== */
+
+/* Generic list container — strips Foundry's default <ul> indentation and
+ * adds a small horizontal gap between sibling items. */
 .digitable {
+    /* Horizontal gap between flex-children in inline list rows. */
     gap: 1em;
+    /* Pull the list snug against the surrounding form group. */
     margin-top: 0;
+    /* Remove the default bullet indentation. */
     padding: 0;
 }
 
+/* Each direct list item inside `.digitable` lays itself out as a row
+ * with vertically-centered children. */
 .digitable > li {
+    /* Vertically center checkbox + label pairs. */
     align-items: center;
+    /* Small gap between the checkbox and its label. */
     gap: 0.5em;
 }
 
+/* Strip the default margin off checkboxes inside `.digitable` rows so
+ * they align cleanly with their labels. */
 .digitable input[type="checkbox"] {
     margin: 0;
 }
 
+/* Fist-icon button injected into each Actor Directory entry. Styled to
+ * disappear into the row — no border, no background, inherits color
+ * from the surrounding link styling. */
 .digitable-initiative-led-button {
+    /* Vertically center against the actor row's text baseline. */
     align-self: center;
+    /* Transparent so the directory row's background shows through. */
     background: transparent;
+    /* No frame around the button itself. */
     border: 0;
+    /* Match the icon color to whatever the row's text color is. */
     color: inherit;
+    /* Avoid leading whitespace pushing the icon out of vertical center. */
     line-height: normal;
+    /* Zero padding keeps the click target compact next to the actor name. */
     padding: 0;
 }
 
+/* When the button class is applied directly to an `.digitable` element,
+ * suppress the right-margin Foundry's default icon styles add to inline
+ * <i> children so the icon sits flush. */
 .digitable.digitable-initiative-led-button > i {
     margin-right: 0;
 }
 
+/* Hover / keyboard-focus state for the fist icon: drop Foundry's
+ * default glow box-shadow and replace it with a subtle red text-shadow
+ * that hints at the upcoming highlight color. */
 .digitable-initiative-led-button:hover, .digitable-initiative-led-button:focus {
+    /* Cancel Foundry's default button glow. */
     box-shadow: none;
+    /* Subtle red halo telegraphs the "current combatant" color. */
     text-shadow: 0 0 5px red;
 }
 
+/* Vertical stack of seat rows inside the SeatConfigApp form. */
 .digitable-seat-config .digitable-seat-list {
+    /* Column flex so each `.digitable-seat-row` is its own row. */
     display: flex;
     flex-direction: column;
+    /* Tight gap between rows; keeps the form compact. */
     gap: 0.35em;
+    /* Breathing room from the surrounding header/buttons. */
     margin: 0.5em 0;
 }
 
+/* One seat row in the seat list. Uses a 6-track grid so the label,
+ * name input, start input, en-dash separator, end input, and remove
+ * button all line up vertically across rows. */
 .digitable-seat-config .digitable-seat-row {
     display: grid;
+    /* Tracks: label (4.5em) | name (flex) | start (4.5em) | dash | end (4.5em) | remove */
     grid-template-columns: 4.5em minmax(0, 1fr) 4.5em auto 4.5em auto;
+    /* Vertically center everything in the row. */
     align-items: center;
+    /* Small horizontal gap between tracks. */
     gap: 0.4em;
 }
 
+/* The "Seat N" label at the start of each row. */
 .digitable-seat-config .digitable-seat-label {
+    /* Bold so the index reads as a heading for the row. */
     font-weight: bold;
 }
 
+/* The optional seat-name text input grows to fill its grid track. */
 .digitable-seat-config .digitable-seat-name {
     width: 100%;
 }
 
+/* The two numeric LED-index inputs: full track width, right-aligned
+ * digits so the dash separator reads naturally. */
 .digitable-seat-config .digitable-seat-num {
     width: 100%;
     text-align: right;
 }
 
+/* The en-dash between start and end inputs. Centered and slightly
+ * faded so it reads as a separator and not another field. */
 .digitable-seat-config .digitable-seat-dash {
     text-align: center;
     opacity: 0.7;
+    /* Stop accidental text selection when the user is editing. */
     user-select: none;
 }
 
+/* Per-row trash-icon "remove seat" button. Inherits color from the
+ * surrounding form so it blends in until hovered. */
 .digitable-seat-config .digitable-seat-remove {
     background: transparent;
     border: 0;
     color: inherit;
+    /* Make it obvious this is interactive. */
     cursor: pointer;
+    /* Generous click target without inflating row height. */
     padding: 0.25em 0.5em;
 }
 
+/* Hover state for the trash button — shift to Foundry's "warm" warning
+ * color so destructive intent reads clearly. Falls back to a plain red
+ * when the variable isn't defined (older Foundry themes). */
 .digitable-seat-config .digitable-seat-remove:hover {
     color: var(--color-warm-2, #b00);
 }
 
+/* The "Add seat" / "Strip length" row sitting below the seat list. */
 .digitable-seat-config .digitable-seat-actions {
+    /* Flex row so the button is on the left and the total on the right. */
     display: flex;
+    /* Push the children to opposite ends. */
     justify-content: space-between;
+    /* Center align the button text with the total indicator. */
     align-items: center;
+    /* Small vertical breathing room. */
     margin: 0.5em 0;
 }
 
+/* Style the bold strip-length number with tabular figures so it doesn't
+ * jitter horizontally as the digit count changes (e.g. 9 → 10). */
 .digitable-seat-config .digitable-seat-total strong {
     font-variant-numeric: tabular-nums;
 }
 
+/* Compact swatch styling for the two color pickers (Current / Next).
+ * The native control is much larger than we need next to a label. */
 .digitable-seat-config .form-group input[type="color"] {
+    /* Wide enough to read as a swatch, narrow enough to sit beside a label. */
     width: 4em;
     height: 2em;
+    /* Drop the browser's default padding around the swatch. */
     padding: 0;
+    /* Thin, theme-aware border with a sensible fallback. */
     border: 1px solid var(--color-border-light-tertiary, #999);
+    /* Transparent so themes with patterned backgrounds show through. */
     background: transparent;
 }
 
+/* Footer row holding the Reset and Save buttons. Right-aligned via
+ * `justify-content: flex-end` so the primary action sits at the far
+ * right where users expect it. */
 .digitable-seat-config .digitable-seat-footer {
     display: flex;
+    /* Small gap between Reset and Save. */
     gap: 0.5em;
+    /* Right-align both buttons. */
     justify-content: flex-end;
+    /* Push the footer away from the color-picker block above. */
     margin-top: 0.5em;
 }
