@@ -1,58 +1,121 @@
+# ============================================================================
+# File: .github/workflows/release-on-commit-module.yml
+# ----------------------------------------------------------------------------
+# Auto-release workflow for the FoundryVTT DigiTable Initiative LED module.
+#
+# When a push to `main` modifies `module.json` (i.e. the version was bumped),
+# this workflow:
+#   1. Zips the whole repository into project.zip.
+#   2. Reads the new version out of module.json with jq.
+#   3. Creates a GitHub Release tagged `vX.Y.Z` whose body is the latest
+#      commit message.
+#   4. Attaches project.zip as a release asset named
+#      `digitable-initiative-led-vX.Y.Z.zip` so Foundry users can install
+#      from a stable URL.
+#
+# Triggered exclusively by module.json changes so test commits don't
+# produce empty releases.
+# ============================================================================
+
+# Human-readable workflow name shown in the GitHub Actions UI.
 name: Check File and Create Release
 
+# Trigger configuration.
 on:
+  # Run on push events...
   push:
+    # ...only when pushing to the `main` branch...
     branches:
       - main
+    # ...and only when the push touches `module.json`.
     paths:
       - 'module.json'
 
+# Job definitions.
 jobs:
+  # Single job that produces the release artifact.
   release:
+    # GitHub-hosted Ubuntu runner — has `apt`, `zip`, `jq` available
+    # (after installation steps below).
     runs-on: ubuntu-latest
+    # Sequential steps that make up the release pipeline.
     steps:
+      # Step 1: pull the repository into the runner's workspace.
       - name: Checkout code
+        # Standard checkout action. v2 is sufficient here; no submodules,
+        # no LFS, no special fetch depth required.
         uses: actions/checkout@v2
 
+      # Step 2: install the `zip` CLI used to bundle the module into a
+      # single archive in the next step.
       - name: Install zip
         run: sudo apt-get install zip
 
+      # Step 3: install `jq` so we can read the module version out of
+      # module.json without writing a custom parser.
       - name: Install jq
         run: sudo apt-get install jq
 
+      # Step 4: package the entire checked-out repo into project.zip.
+      # The `.` includes hidden files (e.g. .github/) too.
       - name: Compress Project
         run: zip -r project.zip .
 
+      # Step 5: capture the head commit message so we can use it as the
+      # release body. Uses the legacy `set-output` syntax — still works
+      # on current runners with a deprecation warning.
       - name: Get commit message
         id: get_commit_msg
         run: |
           echo "::set-output name=commit_msg::$(git log -1 --pretty=format:"%s")"
 
+      # Step 6: read the version field out of module.json and prefix
+      # it with `v` so the resulting tag follows the conventional
+      # `vX.Y.Z` format used by Foundry module manifests.
       - name: Get release name from module.json
         id: get_release_name
         run: |
           RELEASE_NAME=$(jq -r .version module.json)
           echo "::set-output name=release_name::"v"$RELEASE_NAME"
 
+      # Step 7: create the GitHub Release. Stores the upload URL in an
+      # output so the next step can attach the zip.
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
+        # The standard GITHUB_TOKEN is injected automatically for
+        # actions/create-release. It's scoped to this repository.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Inputs for the release creation API call.
         with:
+          # Git tag to create alongside the release (e.g. `v1.3.0`).
           tag_name: ${{ steps.get_release_name.outputs.release_name }}
+          # Display name of the release — same as the tag for consistency.
           release_name: ${{ steps.get_release_name.outputs.release_name }}
+          # Release notes body: the head commit message.
           body: ${{ steps.get_commit_msg.outputs.commit_msg }}
+          # Publish as a final release (not a draft).
           draft: false
+          # Mark as a regular (non-prerelease) release.
           prerelease: false
 
+      # Step 8: attach the zipped module as a downloadable asset on the
+      # release we just created. The download URL feeds the `download`
+      # field in module.json so Foundry's "Install Module" can pull it.
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
+        # Same token as above — needed for asset uploads.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Inputs for the upload action.
         with:
+          # The upload endpoint produced by the create_release step.
           upload_url: ${{ steps.create_release.outputs.upload_url }}
+          # Local path of the artifact to upload.
           asset_path: ./project.zip
+          # Final filename users will see on the GitHub Release page.
           asset_name: digitable-initiative-led-${{ steps.get_release_name.outputs.release_name}}.zip
+          # MIME type so browsers download rather than try to render it.
           asset_content_type: application/zip

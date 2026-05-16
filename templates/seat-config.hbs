@@ -1,15 +1,53 @@
+{{!--
+  ===========================================================================
+  File: templates/seat-config.hbs
+  ---------------------------------------------------------------------------
+  Handlebars template rendered by the SeatConfigApp class
+  (scripts/digitable-initiative-led.js).
+
+  Purpose:
+    GM-facing form that lets the dungeon master configure how each
+    physical "seat" at the table maps onto LED indices on the WLED
+    strip, and pick the two highlight colors used during combat.
+
+  Template context (provided by SeatConfigApp#_buildContext):
+    seats         Array of `{ index, name, start, end }` rows.
+    colorCurrent  Hex color string for the "current combatant" highlight.
+    colorNext     Hex color string for the "next combatant" highlight.
+    total         Live-computed minimum strip length needed.
+    i18n          Object of localization keys consumed by `{{localize}}`.
+
+  Form field naming convention:
+    seats.N.name / seats.N.start / seats.N.end
+    The server-side handler parses these dotted names back into a
+    sparse array indexed by N.
+  ===========================================================================
+--}}
+{{!-- Outer wrapper used as the layout root for ApplicationV2. --}}
 <div class="digitable-seat-config-root">
+  {{!-- Main body of the form: seat list, add/total row, and color pickers. --}}
   <section class="digitable-seat-config-body">
+    {{!-- Container for the vertical stack of per-seat editor rows. --}}
     <div class="digitable-seat-list">
+      {{!-- Iterate every seat in the working snapshot. `this` inside the
+            block refers to one seat record. --}}
       {{#each seats}}
+        {{!-- Single editor row. `data-seat-index` lets the JS handler
+              (`_onRemoveSeat`) identify which row's button was clicked. --}}
         <div class="digitable-seat-row" data-seat-index="{{this.index}}">
+          {{!-- Bold "Seat N" label that opens the row. --}}
           <label class="digitable-seat-label">{{localize ../i18n.seatHeader}} {{this.index}}</label>
+          {{!-- Free-form, optional seat name (e.g. "GM", "Alice"). The
+                dotted `name` attribute is parsed back into seats[N].name
+                during submit. `aria-label` is used since the visible
+                label belongs to the row, not this individual input. --}}
           <input type="text"
                  name="seats.{{this.index}}.name"
                  value="{{this.name}}"
                  placeholder="{{localize ../i18n.namePlaceholder}}"
                  class="digitable-seat-name"
                  aria-label="{{localize ../i18n.nameLabel}}" />
+          {{!-- First LED index owned by this seat (0-based, inclusive). --}}
           <input type="number"
                  name="seats.{{this.index}}.start"
                  value="{{this.start}}"
@@ -17,7 +55,11 @@
                  step="1"
                  class="digitable-seat-num"
                  aria-label="{{localize ../i18n.startLabel}}" />
+          {{!-- Visual en-dash separator between start and end. Pure
+                presentation — has no associated input. --}}
           <span class="digitable-seat-dash">&ndash;</span>
+          {{!-- Last LED index owned by this seat (inclusive). When
+                end < start the range is considered empty. --}}
           <input type="number"
                  name="seats.{{this.index}}.end"
                  value="{{this.end}}"
@@ -25,43 +67,63 @@
                  step="1"
                  class="digitable-seat-num"
                  aria-label="{{localize ../i18n.endLabel}}" />
+          {{!-- Trash button that removes this row. `data-action` dispatches
+                to SeatConfigApp._onRemoveSeat via the V2 action map. --}}
           <button type="button"
                   class="digitable-seat-remove"
                   data-action="removeSeat"
                   data-seat-index="{{this.index}}"
                   data-tooltip="{{localize ../i18n.removeSeat}}">
+            {{!-- Font Awesome trash icon. --}}
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
       {{/each}}
     </div>
 
+    {{!-- Footer of the seat list: "Add seat" button on the left, live
+          strip-length total on the right. --}}
     <div class="digitable-seat-actions">
+      {{!-- "Add seat" button. Routes to SeatConfigApp._onAddSeat via the
+            V2 action map. --}}
       <button type="button" data-action="addSeat">
         <i class="fa-solid fa-plus"></i> {{localize i18n.addSeat}}
       </button>
+      {{!-- Live "Strip length" indicator. The `data-total-leds` element
+            is the one the JS `_bindLiveTotal` updates on every input. --}}
       <span class="digitable-seat-total">
         {{localize i18n.total}}: <strong data-total-leds>{{total}}</strong>
       </span>
     </div>
 
+    {{!-- Visual separator between the seat editor and the color pickers. --}}
     <hr />
 
+    {{!-- "Current turn" color picker. The `name` matches the key the
+          submit handler looks for in formData. --}}
     <div class="form-group">
       <label>{{localize i18n.colorCurrent}}</label>
       <input type="color" name="colorCurrent" value="{{colorCurrent}}" />
     </div>
 
+    {{!-- "Next turn" color picker. --}}
     <div class="form-group">
       <label>{{localize i18n.colorNext}}</label>
       <input type="color" name="colorNext" value="{{colorNext}}" />
     </div>
   </section>
 
+  {{!-- Footer with the Reset and Save buttons. `form-footer` is a
+        Foundry-supplied class that gives standard button alignment;
+        we layer our own class for extra spacing. --}}
   <footer class="form-footer digitable-seat-footer">
+    {{!-- "Reset to defaults" — non-submit button; routes to
+          SeatConfigApp._onReset via the action map. --}}
     <button type="button" data-action="reset">
       <i class="fa-solid fa-rotate-left"></i> {{localize i18n.reset}}
     </button>
+    {{!-- The lone <button type="submit"> in the form triggers the
+          ApplicationV2 submit handler (SeatConfigApp._onSubmit). --}}
     <button type="submit">
       <i class="fa-solid fa-check"></i> {{localize i18n.save}}
     </button>
